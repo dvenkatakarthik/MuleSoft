@@ -1,0 +1,56 @@
+#%RAML 0.8
+title: loan_REST_API
+version: 1.0
+baseUri: http://server/api/{version}
+/loan:
+  displayName: Loan Object
+  get:
+    description: query loan object
+    queryParameters:
+      loanId:
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              {
+                "loan" : {
+                            "id":"1",
+                            "type":"creditcard",
+                            "interestRate":"2.2"
+                          }
+              }
+            schema: |
+              {
+                "$schema": "http://json-schema.org/draft-04/schema#",
+                "id": "http://jsonschema.net",
+                "type": "object",
+                "properties": {
+                "loan": {
+                "id": "http://jsonschema.net/loan",
+                "type": "object",
+                "properties": {
+                "id": {
+                "id": "http://jsonschema.net/loan/id",
+                "type": "string"
+                },
+                "type": {
+                "id": "http://jsonschema.net/loan/type",
+                "type": "string"
+                },
+                "interestRate": {
+                "id": "http://jsonschema.net/loan/interestRate",
+                "type": "string"
+                }
+                },
+                "required": [
+                "id",
+                "type",
+                "interestRate"
+                ]
+                }
+                },
+                "required": [
+                "loan"
+                ]
+                }

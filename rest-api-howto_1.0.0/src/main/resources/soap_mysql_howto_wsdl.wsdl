@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?><wsdl:definitions xmlns:xsd1="http://www.mulesoft.com/schemas/Mule/Schema.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://www.example.org/loan_system_api_wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" name="loan_system_api_wsdl" targetNamespace="http://www.example.org/loan_system_api_wsdl/">
+  <wsdl:types>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    	
+  <xsd:import namespace="http://www.mulesoft.com/schemas/Mule/Schema.xsd" schemaLocation="http://soap-mysql-howto.cloudhub.io/bank/loan?xsd=loanSchema.xsd">
+    	</xsd:import>
+</xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="getLoanResponse">
+    <wsdl:part element="xsd1:getLoanResponse" name="parameters">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getLoanRequest">
+    <wsdl:part element="xsd1:getLoanRequest" name="parameters">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="loan_system_api_wsdl">
+    <wsdl:operation name="getLoan">
+      <wsdl:input message="tns:getLoanRequest">
+    </wsdl:input>
+      <wsdl:output message="tns:getLoanResponse">
+    </wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="loan_system_api_wsdlSOAP" type="tns:loan_system_api_wsdl">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="getLoan">
+      <soap:operation soapAction="http://www.example.org/loan_system_api_wsdl/getLoan"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="loan_system_api_wsdl">
+    <wsdl:port binding="tns:loan_system_api_wsdlSOAP" name="loan_system_api_wsdlSOAP">
+      <soap:address location="http://soap-mysql-howto.cloudhub.io/bank/loan"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

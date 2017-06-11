@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <sfdc:config name="Salesforce__Basic_Authentication" username="dvenkatakarthik@gmail.com" password="yourpassword" doc:name="Salesforce: Basic Authentication" securityToken="EqTBBlSius7UzL9lLQ9NmAPg"/>
+        
+    
+    <flow name="sfdc-accountsFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/accounts" allowedMethods="POST" doc:name="HTTP"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+[{
+	Name: "Indidge Systems",
+	BillingStreet: "Pheonix drive",
+	BillingCity: "Pheonix",
+	BillingState: "AZ",
+	Phone: "8162376625",
+	Type: "Channel"
+},
+{
+	Name: "NihaTech",
+	Type: "prospect",
+	BillingStreet: "Rolling Fork circle",
+	BillingCity: "Herndon",
+	BillingState: "VA",
+	BillingPostalCode: "20172",
+	Phone: "8162376625"
+}]]]></dw:set-payload>
+        </dw:transform-message>
+        <sfdc:create config-ref="Salesforce__Basic_Authentication" type="Account" doc:name="Salesforce">
+            <sfdc:objects ref="#[payload]"/>
+        </sfdc:create>
+
+        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+        
+ </flow>
+    <flow name="sfdc-accountsFlow4">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/accountsUpdate" allowedMethods="POST" doc:name="HTTP"/>
+        <dw:transform-message metadata:id="c94d5276-2f5f-4351-bc36-44fb76dead5f" doc:name="Transform Message">
+            <dw:input-payload mimeType="application/json"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload map ((payload01 , indexOfPayload01) -> {
+	BillingCountry: payload01.Country,
+	AccountNumber: payload01.accnumber,
+	Description: payload01.Desc
+})]]></dw:set-payload>
+        </dw:transform-message>
+        <sfdc:update-bulk config-ref="Salesforce__Basic_Authentication" type="Account" doc:name="Salesforce">
+            <sfdc:objects ref="#[payload]"/>
+        </sfdc:update-bulk>
+        <logger level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="sfdc-accountsFlow3">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/accountsall" allowedMethods="GET" doc:name="HTTP"/>
+        <sfdc:query config-ref="Salesforce__Basic_Authentication" query="dsql:SELECT AccountNumber,AccountSource,BillingCity,BillingCountry,BillingGeocodeAccuracy,BillingPostalCode,BillingState,BillingStreet,CreatedById,Description,DunsNumber,LastModifiedById,LastModifiedDate,LastReferencedDate FROM Account ORDER BY AccountNumber ASC" doc:name="Salesforce"/>
+        <dw:transform-message metadata:id="046d0fb2-b8b2-420d-961c-b751158ebf48" doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+payload map ((payload01 , indexOfPayload01) -> {
+	Country: payload01.BillingCountry,
+	Desc: payload01.Description,
+	city: payload01.BillingCity,
+	street: payload01.BillingStreet,
+	postalcode: payload01.BillingPostalCode,
+	state: payload01.BillingState,
+	accnumber: payload01.AccountNumber
+})]]></dw:set-payload>
+        </dw:transform-message>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+        <logger message="#[message.payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="sfdc-accountsFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/accounts" allowedMethods="GET" doc:name="HTTP"/>
+        <sfdc:get-user-info config-ref="Salesforce__Basic_Authentication" doc:name="Salesforce"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="sfdc-accountsFlow2">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/others" doc:name="HTTP"/>
+        <sfdc:get-updated config-ref="Salesforce__Basic_Authentication" type="AccountFeed" duration="1000" doc:name="Salesforce"/>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+
+</mule>

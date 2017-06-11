@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+    <spring:beans>
+        <spring:bean id="pgpKeyManager" name="pgpKeyManager" class="org.mule.module.pgp.PGPKeyRingImpl" init-method="initialise">
+            <spring:property name="publicKeyRingFileName" value="\Users\dvenk\DemoFTP\PGP\DemoPublicKey.gpg"/>
+            <spring:property name="secretAliasId" value="1"/>
+            <spring:property name="secretKeyRingFileName" value="\Users\dvenk\DemoFTP\PGP\DemoPrivateKey.gpg"/>
+            <spring:property name="secretPassphrase" value="DemoSFTPPGP"/>
+        </spring:bean>
+        <spring:bean id="pgpCredentialAccessor" name="pgpCredentialAccessor" class="com.demo.PgpCredentialAccessor">
+            <spring:constructor-arg value="DemoSFTPPGP &lt;abc@abc.com&gt;"/>
+        </spring:bean>                
+    </spring:beans>
+  
+<encryption:config name="Encryption_PGP" defaultEncrypter="PGP_ENCRYPTER" doc:name="Encryption_PGP">
+        <encryption:pgp-encrypter-config publicKeyRingFileName="./mule.gpg"/>
+</encryption:config>
+
+
+    <flow name="pgpFlow">
+        <sftp:inbound-endpoint host="localhost" port="22" path="\Users\dvenk\DemoFTP\ENCRYPTED\" user="dvenkatakarthik" password="yourpassword" responseTimeout="10000" doc:name="SFTP"/>
+        <set-variable variableName="originalfilename" value="#[message.inboundProperties.originalFilename]" doc:name="originalfilename"/>
+        <encrypt-transformer strategy-ref="keyBasedEncryptionStrategy" doc:name="Encrypt Transformer"/>
+        <logger message="Encrypted Contents: #[payload]" level="INFO" doc:name="Logger"/>
+        <sftp:outbound-endpoint exchange-pattern="one-way" outputPattern="#[flowVars[originalfilename]].pgp" host="localhost" port="22" path="\Users\dvenk\DemoFTP\ENCRYPTED\" user="dvenk" password="yourpassword" responseTimeout="10000" doc:name="SFTP"/>
+    </flow>
+    
+</mule>

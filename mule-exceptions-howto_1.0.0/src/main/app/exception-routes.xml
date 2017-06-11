@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+    <sub-flow name="exception-routesSub_Flow">
+        <logger message="Exception type: #[flowVars.exceptionClass]" level="ERROR" doc:name="Log Error to Console"/>
+        <copy-properties propertyName="*" doc:name="Copy Header Properties"/>
+        <message-properties-transformer doc:name="Add to Header Properties">
+            <add-message-property key="EXCEPTION_MESSAGE" value="#[flowVars.exceptionObject.message]"/>
+            <delete-message-property key="Content-Type"/>
+        </message-properties-transformer>
+        <set-payload value="#[originalPayload]" doc:name="Copy Original Payload for Routing to DLQ"/>
+        <jms:outbound-endpoint queue="dlq" connector-ref="Active_MQ" doc:name="Enqueue to DLQ">
+            <jms:transaction action="ALWAYS_JOIN"/>
+        </jms:outbound-endpoint>
+    </sub-flow>
+</mule>

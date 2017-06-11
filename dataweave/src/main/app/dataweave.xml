@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <flow name="dataweaveFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/dataweave" doc:name="HTTP"/>
+        <set-payload value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;root&gt;
+	&lt;person name=&quot;Q&quot;&gt;
+		&lt;address type=&quot;Home&quot;&gt;
+			&lt;city&gt;London&lt;/city&gt;
+			&lt;country&gt;UK&lt;/country&gt;
+		&lt;/address&gt;
+		&lt;address type=&quot;Office&quot;&gt;
+			&lt;city&gt;Paris&lt;/city&gt;
+			&lt;country&gt;FR&lt;/country&gt;
+		&lt;/address&gt;
+		&lt;address type=&quot;Remote&quot;&gt;
+			&lt;city&gt;Rome&lt;/city&gt;
+			&lt;country&gt;IT&lt;/country&gt;
+		&lt;/address&gt;
+	&lt;/person&gt;
+	&lt;person name=&quot;M&quot;&gt;
+		&lt;address type=&quot;Office&quot;&gt;
+			&lt;city&gt;Chicago&lt;/city&gt;
+			&lt;country&gt;US&lt;/country&gt;
+		&lt;/address&gt;
+	&lt;/person&gt;
+&lt;/root&gt;" doc:name="Set Payload"/>
+        <dw:transform-message metadata:id="2d6cf624-9adc-41f3-9caf-9ded0fe06fbe" doc:name="Transform Message">
+            <dw:input-payload doc:sample="C:\Users\dvenk\Desktop\sourcee.xml" mimeType="application/xml"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/xml
+---
+root: {
+	
+
+		(payload.root.*person map ((person, indexOfPerson) -> {
+		user: {	
+			name: person.@name,
+			
+			
+
+			
+			(person.*address map ((addr, indexOfAddr) -> {
+			(addr.@type)  : {
+
+					city: addr.city,
+					country: addr.country
+			} 
+				
+			}  ))  
+			
+			
+			
+			
+			} - "Remote" 
+		}  ))
+	
+	
+}]]></dw:set-payload>
+            <dw:set-variable variableName="Target2"><![CDATA[%dw 1.0
+%output application/xml
+%var array=[UK:"UnitedKingdom", US:"UnitedStates", FR:"France"]
+%function getCountry(value)
+	array[value][0] 
+		
+---
+root: {
+	
+
+		(payload.root.*person map ((person, indexOfPerson) -> {
+		user: {	
+			name: person.@name,
+			
+			
+
+			
+			(person.*address map ((addr, indexOfAddr) -> {
+			(addr.@type)  : {
+					city: addr.city,
+					country: getCountry(addr.country)
+			} 
+				
+			}  ))  
+			
+			
+			
+			
+			} - "Remote" 
+		}  ))
+	
+	
+}]]></dw:set-variable>
+        </dw:transform-message>
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>

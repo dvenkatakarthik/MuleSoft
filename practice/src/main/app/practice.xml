@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:github="http://www.mulesoft.org/schema/mule/github" xmlns:ftp="http://www.mulesoft.org/schema/mule/ee/ftp" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/github http://www.mulesoft.org/schema/mule/github/current/mule-github.xsd
+http://www.mulesoft.org/schema/mule/ee/ftp http://www.mulesoft.org/schema/mule/ee/ftp/current/mule-ftp-ee.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <github:config name="GitHub__Configuration" connectionUser="dvenkatakarthik" connectionPassword="yourpassword" doc:name="GitHub: Configuration"/>
+    <flow name="practiceFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/practice" doc:name="HTTP" allowedMethods="POST"/>
+        <logger message="#[message.payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+    <flow name="practiceFlow1">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/xmltrans" doc:name="HTTP"/>
+        <set-payload value="&lt;customers&gt;
+	&lt;dept&gt;Retail&lt;/dept&gt;
+	&lt;zone&gt;Hyd&lt;/zone&gt;
+	&lt;customer&gt;
+		&lt;name&gt;Rahul&lt;/name&gt;
+		&lt;age&gt;&lt;/age&gt;
+		&lt;address&gt;
+			&lt;street&gt;&lt;/street&gt;
+			&lt;city&gt;&lt;/city&gt;
+		&lt;/address&gt;
+	&lt;/customer&gt;
+	&lt;customer&gt;
+		&lt;name&gt;Ravi&lt;/name&gt;
+		&lt;age&gt;&lt;/age&gt;
+		&lt;address&gt;
+			&lt;street&gt;&lt;/street&gt;
+			&lt;city&gt;&lt;/city&gt;
+		&lt;/address&gt;
+	&lt;/customer&gt;
+	&lt;customer&gt;
+		&lt;name&gt;Rajesh&lt;/name&gt;
+		&lt;age&gt;&lt;/age&gt;
+		&lt;address&gt;
+			&lt;street&gt;&lt;/street&gt;
+			&lt;city&gt;&lt;/city&gt;
+		&lt;/address&gt;
+	&lt;/customer&gt;
+	&lt;customer&gt;
+		&lt;name&gt;Rehman&lt;/name&gt;
+		&lt;age&gt;&lt;/age&gt;
+		&lt;address&gt;
+			&lt;street&gt;&lt;/street&gt;
+			&lt;city&gt;&lt;/city&gt;
+		&lt;/address&gt;
+	&lt;/customer&gt;
+&lt;/customers&gt;" mimeType="application/xml" doc:name="Set Payload"/>
+        <dw:transform-message metadata:id="8c1ecc29-5af9-418c-9dda-45ed0ba7ff11" doc:name="Transform Message">
+            <dw:input-payload doc:sample="sample_data\empty_2.xml" mimeType="application/xml"/>
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/xml
+---
+dept: {
+	name: payload.customers.dept,
+	area: payload.customers.zone,
+	custname: { (payload.customers.*customer map {
+		name: $.name
+	})		
+	}
+}]]></dw:set-payload>
+        </dw:transform-message>
+        <logger message="#[message.payload]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>

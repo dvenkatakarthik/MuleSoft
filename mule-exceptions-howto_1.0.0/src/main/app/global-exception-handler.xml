@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+    <choice-exception-strategy name="global-exception-handlerChoice_Exception_Strategy">
+		<catch-exception-strategy when="#[exception.causedBy(com.mulesoft.weave.mule.exception.WeaveExecutionException)]" doc:name="Dataweave Exception">
+            <logger message="Dataweave Exception" level="INFO" doc:name="Log Exception to Console"/>
+            <set-variable variableName="exceptionClass" value="#['DW_EXCEPTION']" doc:name="Set Exception Class"/>
+            <set-variable variableName="exceptionObject" value="#[exception.cause != null ? exception.cause : exception]" doc:name="Set Exception Cause"/>
+            <flow-ref name="exception-routesSub_Flow" doc:name="Route to Exception Handling Sub-Flow"/>
+		</catch-exception-strategy>
+        <catch-exception-strategy when="#[exception.causedBy(org.mule.extension.validation.api.ValidationException)]" doc:name="Non Retriable Business Exception">
+            <logger message="Non Retriable Business Exception" level="INFO" doc:name="Log Exception to Console"/>
+            <set-variable variableName="exceptionClass" value="#['BUSINESS_EXCEPTION']" doc:name="Set Exception Class"/>
+            <set-variable variableName="exceptionObject" value="#[exception.cause != null ? exception.cause : exception]" doc:name="Set Exception Cause"/>
+            <flow-ref name="exception-routesSub_Flow" doc:name="Route to Exception Handling Sub-Flow"/>
+        </catch-exception-strategy>
+        <rollback-exception-strategy maxRedeliveryAttempts="2" doc:name="Rollback Exception Strategy" when="#[exception.causedBy(java.sql.SQLException)]">
+            <logger message="Rolling back: #[message.inboundProperties.'JMSXDeliveryCount' == null  ? 1 : message.inboundProperties.'JMSXDeliveryCount'] #[exception.class]" level="ERROR" doc:name="Log Rollback Details to Console"/>
+            <on-redelivery-attempts-exceeded>
+                <logger message="#### System exception. #[exception.class]" level="ERROR" doc:name="Log Redelivery Exhausted to Console"/>
+                <copy-properties propertyName="*" doc:name="Copy Header Properties"/>
+                <message-properties-transformer doc:name="Add to Header Properties">
+                    <add-message-property key="EXCEPTION_MESSAGE" value="Database unavailable"/>
+                    <add-message-property key="MULE_REDELIVERY_COUNT" value="#[message.inboundProperties.'JMSXDeliveryCount' -1]"/>
+                </message-properties-transformer>
+                <jms:outbound-endpoint queue="dlq" connector-ref="Active_MQ" doc:name="Enqueue to DLQ">
+                    <jms:transaction action="ALWAYS_JOIN"/>
+                </jms:outbound-endpoint>
+            </on-redelivery-attempts-exceeded>
+        </rollback-exception-strategy>
+        <catch-exception-strategy doc:name="Default Exception Handler">
+        	<logger message="Default exception handler catch all." level="ERROR" doc:name="Log Default Catch-All to Console"/>
+        </catch-exception-strategy>
+    </choice-exception-strategy>
+</mule>

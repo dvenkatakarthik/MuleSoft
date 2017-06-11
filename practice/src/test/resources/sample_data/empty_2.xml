@@ -1,0 +1,15 @@
+{
+  "candidates": [
+    {
+      "address": "",
+      "address2": "",
+      "application": {
+        "customField": [ s ]
+		}
+	},
+	"total": 1,
+	"status": {
+    "code": 200,
+    "messages": []
+  }
+}
